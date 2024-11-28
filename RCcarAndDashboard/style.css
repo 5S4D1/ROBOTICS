@@ -12,7 +12,7 @@ body {
 }
 
 .dashboard {
-    margin-top: 50px;
+    margin-top: 30px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
@@ -46,6 +46,53 @@ body {
     font-size: 1.5rem;
     margin-bottom: 15px;
     color: #333;
+}
+
+.input-card {
+    margin-top: 10px;
+    background: rgb(255, 255, 255);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* From Uiverse.io by shadowmurphy */ 
+.input {
+    border: 2px solid transparent;
+    width: 29em;
+    height: 3em;
+    padding-left: 0.8em;
+    outline: none;
+    overflow: hidden;
+    background-color: #F3F3F3;
+    border-radius: 10px;
+    transition: all 0.5s;
+}
+
+.input:hover,
+.input:focus {
+    border: 2px solid #4A9DEC;
+    box-shadow: 0px 0px 0px 7px rgb(74, 157, 236, 20%);
+    background-color: white;
+}
+
+button {
+    height: 3em;
+    font-family: monospace;
+    color: white;
+    text-transform: uppercase;
+    padding: 7px 15px;
+    border-radius: 10px;
+    border: 2px solid #243642;
+    background: #006A67;
+    box-shadow: 3px 3px #3B1C32;
+    cursor: pointer;
+}
+
+button:active {
+    box-shadow: none;
+    transform: translate(3px, 3px);
 }
 
 /* Status Bar Styles */
@@ -163,13 +210,22 @@ input:checked + .slider:before {
 .camera-feed {
     width: 100%;
     aspect-ratio: 16/9;
-    background-color: #1a1a1a;
+    background-color: #000000;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #666;
     flex-direction: column;
+}
+
+#noVideoMessage {
+    position: absolute;
+    font-family: cursive;
+    font-size: 1.3rem;
+    text-align: center;
+    color: #504e4e;
+    display: block; /* Visible by default */
+    padding: 20px;
 }
 
 .camera-feed i {
