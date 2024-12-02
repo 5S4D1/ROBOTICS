@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Control Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Left Side - Controls and Sensor Data -->
+        <div class="left-panel">
+            <!-- Status Card -->
+            <div class="card">
+                <div class="status-bar">
+                    <div class="connection-status">
+                        <div class="status-indicator"></div>
+                        <span>Disconnected</span>
+                    </div>
+                    <div class="autonomous-toggle">
+                        <span>Autonomous Mode</span>
+                        <label class="switch">
+                            <input type="checkbox" id="autonomousToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor Data Card -->
+            <div class="card1">
+                <h2 class="card-title">Ultrasonic Sensor Data</h2>
+                <div class="sensor-data">
+                    <div class="distance-display">
+                        Distance: <span id="distanceValue">999</span> cm
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 50%"></div>
+                    </div>
+                    <div id="timestamp">Last Updated: 12:00:00</div>
+                </div>
+                <div class="warning-alert" id="warningAlert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Obstacle Detected!
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Camera Feed -->
+        <div class="card">
+            <!-- Status Card -->
+            <div class="input-card">
+                <h2>IP Address Input</h2>
+                <br>
+                <!-- Address input bar -->
+                <input class="input" type="url" id="inputLink" placeholder="https://10.15.16.165:8080" required>
+                <button onclick="loadCamera()">Load Video</button>
+            </div>
+            <br>
+            <h2 class="card-title">IP Camera Feed</h2>
+            <div class="camera-feed">
+                <div id="noVideoMessage">No video stream available. Please load an IP camera.</div>
+                <iframe id="cameraFrame" width="640" height="480" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
