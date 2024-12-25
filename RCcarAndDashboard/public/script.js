@@ -1,61 +1,130 @@
-// WebSocket connection
-const socket = new WebSocket('ws://' + window.location.hostname + ':3000');
+let socket;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
-// DOM elements
-const distanceValue = document.getElementById('distanceValue');
-const progressFill = document.querySelector('.progress-fill');
-const timestamp = document.getElementById('timestamp');
-const warningAlert = document.getElementById('warningAlert');
-const autonomousToggle = document.getElementById('autonomousToggle');
-const statusIndicator = document.querySelector('.status-indicator');
-const connectionStatus = document.querySelector('.connection-status span');
+// DOM Element References
+const elements = {
+    distanceValue: document.getElementById('distanceValue'),
+    progressFill: document.querySelector('.progress-fill'),
+    timestamp: document.getElementById('timestamp'),
+    warningAlert: document.getElementById('warningAlert'),
+    autonomousToggle: document.getElementById('autonomousToggle'),
+    statusIndicator: document.querySelector('.status-indicator'),
+    connectionStatus: document.querySelector('.connection-status span')
+};
 
-socket.addEventListener('open', (event) => {
-    console.log('Connected to WebSocket server');
-    statusIndicator.style.backgroundColor = '#22c55e';
-    connectionStatus.textContent = 'Connected';
-});
+function connectWebSocket() {
+    socket = new WebSocket('ws://' + window.location.hostname + ':3000');
 
-socket.addEventListener('message', (event) => {
-    try {
-        const data = JSON.parse(event.data);
-        console.log('Received data:', data);
-        
-        // Check if the distance is available and update the dashboard
-        if (data.distance !== undefined) {
-            updateDashboard(data.distance);  // This will update the displayed distance
+    socket.addEventListener('open', (event) => {
+        console.log('Connected to WebSocket server');
+        updateConnectionStatus(true);
+        reconnectAttempts = 0;
+    });
+
+    socket.addEventListener('message', (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Received data:', data);
+            updateDashboard(data);
+        } catch (error) {
+            console.error('Error parsing message:', error);
         }
-    } catch (error) {
-        console.error('Error parsing message:', error);
-    }
-});
+    });
 
-function updateDashboard(distance) {
-    distanceValue.textContent = distance;  // Update the distance on your dashboard
-    const percentage = Math.min(100, (distance / 400) * 100);
-    progressFill.style.width = `${percentage}%`;
-    
-    const now = new Date();
-    timestamp.textContent = `Last Updated: ${now.toLocaleTimeString()}`;
-    
-    if (distance < 50) {
-        warningAlert.style.display = 'block';
-        progressFill.style.backgroundColor = '#dc3545';
-    }
-    else if (distance > 49 && distance < 130) {
-        warningAlert.style.display = 'none';
-        progressFill.style.backgroundColor = '#355F2E';
-    } else {
-        warningAlert.style.display = 'none';
-        progressFill.style.backgroundColor = '#007bff';
-    }
+    socket.addEventListener('close', (event) => {
+        console.log('Disconnected from WebSocket server');
+        updateConnectionStatus(false);
+        
+        // Implement reconnection with backoff
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            const delay = Math.pow(2, reconnectAttempts) * 1000;
+            reconnectAttempts++;
+            
+            setTimeout(connectWebSocket, delay);
+        } else {
+            console.error('Maximum reconnection attempts reached');
+            alert('Connection lost. Please refresh the page.');
+        }
+    });
 }
 
+function updateConnectionStatus(isConnected) {
+    elements.statusIndicator.style.backgroundColor = isConnected ? '#22c55e' : '#dc3545';
+    elements.connectionStatus.textContent = isConnected ? 'Connected' : 'Disconnected';
+}
 
-autonomousToggle.addEventListener('change', (event) => {
-    const mode = event.target.checked ? 'AUTONOMOUS' : 'MANUAL';
-    socket.send(JSON.stringify({ command: mode }));
+function updateDashboard(data) {
+    // Distance tracking
+    elements.distanceValue.textContent = data.distance ? data.distance.toFixed(2) : 'N/A';
+    const percentage = Math.min(100, (data.distance / 300) * 100);
+    elements.progressFill.style.width = `${percentage}%`;
+    
+    // Timestamp
+    const now = new Date();
+    elements.timestamp.textContent = `Last Updated: ${now.toLocaleTimeString()}`;
+    
+    // Warning for close obstacles
+    if (data.distance < 20) {
+        elements.warningAlert.style.display = 'block';
+        elements.progressFill.style.backgroundColor = '#dc3545';
+    } else {
+        elements.warningAlert.style.display = 'none';
+        elements.progressFill.style.backgroundColor = '#007bff';
+    }
+
+    // Autonomous mode toggle
+    elements.autonomousToggle.checked = data.mode === 'AUTONOMOUS';
+
+    // Additional telemetry (if available)
+    elements.batteryLevel.textContent = data.battery ? `${data.battery}%` : 'N/A';
+    elements.speedValue.textContent = data.speed ? `${data.speed} km/h` : 'N/A';
+    elements.temperatureValue.textContent = data.temperature ? `${data.temperature}°C` : 'N/A';
+}
+
+// Event Listeners
+elements.autonomousToggle.addEventListener('change', (event) => {
+    const command = event.target.checked ? 'AUTONOMOUS' : 'MANUAL';
+    sendCommand(command);
 });
+
+// Keyboard control (only active in manual mode)
+document.addEventListener('keydown', (event) => {
+    if (!elements.autonomousToggle.checked) {
+        let command = '';
+        switch (event.key) {
+            case 'ArrowUp': command = 'FORWARD'; break;
+            case 'ArrowDown': command = 'BACKWARD'; break;
+            case 'ArrowLeft': command = 'LEFT'; break;
+            case 'ArrowRight': command = 'RIGHT'; break;
+        }
+        if (command) sendCommand(command);
+    }
+});
+
+document.addEventListener('keyup', (event) => {
+    if (!elements.autonomousToggle.checked && 
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        sendCommand('STOP');
+    }
+});
+
+// Command sending with error handling
+function sendCommand(command) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        try {
+            socket.send(JSON.stringify({ command }));
+            console.log('Sent command:', command);
+        } catch (error) {
+            console.error('Error sending command:', error);
+            alert('Failed to send command. Check connection.');
+        }
+    } else {
+        console.error('WebSocket is not connected');
+        alert('Connection lost. Attempting to reconnect...');
+        connectWebSocket();
+    }
+}
 
 // Camera loading function
 function loadCamera() {
@@ -88,5 +157,11 @@ function loadCamera() {
 
 // Initialize the dashboard
 document.addEventListener('DOMContentLoaded', () => {
-    updateDashboard(999); // Initial distance value
+    connectWebSocket();
+    
+    // Initialize with default/placeholder values
+    updateDashboard({
+        distance: 0,
+        mode: 'MANUAL'
+    });
 });

@@ -4,6 +4,9 @@
 
 const char* ssid = "Major Dalim";
 const char* password = "01727093609@@";
+// const char* ssid = "UIU-CAIR";
+// const char* password = "12345678";
+
 const char* websocket_server = "192.168.0.114";
 const int websocket_port = 3000;
 
